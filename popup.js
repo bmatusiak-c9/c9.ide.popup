@@ -26,30 +26,15 @@ define(function(require, exports, module) {
 
         /***** Lets talk about this *****/
         /*
-            HowTo: Open a tab then right click tab, then click "Popout tab"
+            Open a tab then right click tab, then click "Popout tab"
                     There is also a menu item for this also, "View/Popout Window"
                 On popup, You can right click tab, and Popin Tab
                 
-            Todo: 
-                    1. popup last position. 
-                    3. Drag tabs. <if there is a will there is a way>
-                    
-                    4. Sync runners and debuggers. <try to sync any all events to main window, not just for runners and debuggers
-                            *make sure master has events storage*>
-                        **
-                    
-                    
-                    6. enable multi popups <some more trickery with settings plugin, and this still mabe limited to 2 or 3, for resource/proformance reasons>
-                            add this to prefrences panel
-                    7. Need to provice each popup with a window.name key, so a 2nd project dont take over a popup
-                    
-        Keep Terminal State when switching windows
-            ```c9.ide.terminal/terminal.js
-                doc.on("unload", function(){
-                    //if tab is detaching dont kill or distroy the process
-                    if(doc.tab.meta.$detach)
-                        return;
-            ```
+            read c9core.diff for core changes
+            
+            files effected 
+                plugins/c9.core/settings.js
+                plugins/c9.ide.terminal/terminal.js
         */
         
         
