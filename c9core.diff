@@ -1,5 +1,5 @@
 diff --git a/plugins/c9.core/settings.js b/plugins/c9.core/settings.js
-index b9cb93d..ed63c31 100644
+index b9cb93d..737bab9 100644
 --- a/plugins/c9.core/settings.js
 +++ b/plugins/c9.core/settings.js
 @@ -22,7 +22,7 @@ define(function(require, exports, module) {
@@ -20,9 +20,9 @@ index b9cb93d..ed63c31 100644
 +            for (var j = 0; j < arguments.length; j++) { 
 +                args.push(arguments[j]);
 +            }
-+            if(!window.opener && window.children)
++            if(window && !window.name != "" && window.children)
 +                for(var i in window.children){
-+                    if(window.children[i] && window.children[i].app)
++                    if(window.children[i] && window.children[i].app && !window.children[i].closed)
 +                    window.children[i].app.settings.emitter.apply(null,args);
 +                }
 +            else if(window.opener){

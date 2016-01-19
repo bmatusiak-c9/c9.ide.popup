@@ -5,7 +5,7 @@
  * 
  **/
 define(function(require, exports, module) {
-    main.consumes = ["Plugin", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", "panels", "settings", "dialog.question"];
+    main.consumes = ["Plugin", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", "panels", "settings", "dialog.question", "ace"];
     main.provides = ["popup"];
 
     return main;
@@ -17,6 +17,7 @@ define(function(require, exports, module) {
         var tabManager = imports.tabManager;
         var menus = imports.menus;
         var ui = imports.ui;
+        var ace = imports.ace;
         var question = imports["dialog.question"].show;
         var mnuContext = tabbehavior.contextMenu;
         var settings = imports.settings;
@@ -117,7 +118,6 @@ define(function(require, exports, module) {
             command: "popuptab"
         }), 1020, mnuContext, plugin);
 
-
         settings.on("read", function() {
             settings.setDefaults("state/popup", [
                 ["isOpen", "false"],
@@ -158,6 +158,8 @@ define(function(require, exports, module) {
         
         tabManager.on("open", function(e) {
             for(var i in plugin.windows){
+                var $window = plugin.windows[i];
+                if(!$window || !$window.app) return;
                 var tabsList = plugin.windows[i].app.tabManager.getTabs();
                 for (var j = 0; j < tabsList.length; j++) { 
                     var $tab = tabsList[j];
