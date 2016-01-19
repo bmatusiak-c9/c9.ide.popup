@@ -26,15 +26,30 @@ define(function(require, exports, module) {
 
         /***** Lets talk about this *****/
         /*
-            Open a tab then right click tab, then click "Popout tab"
+            HowTo: Open a tab then right click tab, then click "Popout tab"
                     There is also a menu item for this also, "View/Popout Window"
                 On popup, You can right click tab, and Popin Tab
                 
-            read c9core.diff for core changes
-            
-            files effected 
-                plugins/c9.core/settings.js
-                plugins/c9.ide.terminal/terminal.js
+            Todo: 
+                    1. popup last position. 
+                    3. Drag tabs. <if there is a will there is a way>
+                    
+                    4. Sync runners and debuggers. <try to sync any all events to main window, not just for runners and debuggers
+                            *make sure master has events storage*>
+                        **
+                    
+                    
+                    6. enable multi popups <some more trickery with settings plugin, and this still mabe limited to 2 or 3, for resource/proformance reasons>
+                            add this to prefrences panel
+                    7. Need to provice each popup with a window.name key, so a 2nd project dont take over a popup
+                    
+        Keep Terminal State when switching windows
+            ```c9.ide.terminal/terminal.js
+                doc.on("unload", function(){
+                    //if tab is detaching dont kill or distroy the process
+                    if(doc.tab.meta.$detach)
+                        return;
+            ```
         */
         
         
@@ -127,14 +142,16 @@ define(function(require, exports, module) {
             if (isPopup()) {//send back to main window
                 var tabState = tab.getState();
                 tabState.windowName = window.name;
-                popupMainWindow.app.tabManager.open(tabState, tabOpened);
+                tabOpened();
+                popupMainWindow.app.tabManager.open(tabState);
             }
             else
                 openWindow(function(popupwin) {
                     if (tab) {
                         var tabState = tab.getState();
                         tabState.windowName = window.name;
-                        popupwin.app.tabManager.open(tabState, tabOpened);
+                        tabOpened();
+                        popupwin.app.tabManager.open(tabState);
                     }
                 });
         }
@@ -144,7 +161,10 @@ define(function(require, exports, module) {
                 var tabsList = plugin.windows[i].app.tabManager.getTabs();
                 for (var j = 0; j < tabsList.length; j++) { 
                     var $tab = tabsList[j];
-                    if($tab.path == e.tab.path && e.options.windowName != i){
+                    if(( $tab.document.editor && $tab.document.editor.type != "terminal") && 
+                        $tab.path == e.tab.path && 
+                        e.options.windowName != i &&
+                        !plugin.windows[e.options.windowName].closed){
                         setTimeout(function(){
                             popuptab(e.tab);
                         },0);
@@ -161,10 +181,14 @@ define(function(require, exports, module) {
                 window.c9popupReady();
                 tabManager.on("tabAfterClose", function(e) {
                     if (tabManager.getPanes()[0].getTabs().length == 1 && tabManager.getPanes()[0].getTabs()[0].path == e.tab.path) {
-                        popupMainWindow.app.settings.set("state/" + popupWindowID, {}, true); //clearState of popwindow
+                        popupMainWindow.app.settings.set("state/" + window.name, {}, true); //clearState of popwindow
                         popupMainWindow.app.settings.set("state/popup/@isOpen","false");
                         popupMainWindow.app.settings.save(true);
-                        window.close();
+                        
+                        setTimeout(function(){
+                            window.location.href = "about:blank";
+                            window.close();
+                        },0);
                     }
                 });
                 popupMainWindow.app.settings.set("state/popup/@isOpen","true"); //dont re open this popup window on reload
@@ -173,19 +197,19 @@ define(function(require, exports, module) {
             window.addEventListener("beforeunload",function() {//popup window
                 if (!popupMainWindow.closing && tabManager.getPanes()[0].getTabs().length == 1) {
                     popupMainWindow.app.settings.set("state/popup/@isOpen","false"); //dont re open this popup window on reload
-                    popupMainWindow.app.settings.set("state/"+popupWindowID,{},true); //clearState of popwindow
+                    popupMainWindow.app.settings.set("state/"+window.name,{},true); //clearState of popwindow
                 }
                 popupMainWindow.app.settings.save(true);
+                setTimeout(function(){
+                    window.location.href = "about:blank";
+                },0);
             });
             
         }else{
-            var closePopoutIfMainIsClosing = true; //Add this to preferences panel
-            
             window.addEventListener("beforeunload",function() { //main window
                 window.closing = true;
-                if (closePopoutIfMainIsClosing)
-                    for (var i in plugin.windows)
-                        plugin.windows[i].close();
+                for (var i in plugin.windows)
+                    plugin.windows[i].close();
             });
         }
         
