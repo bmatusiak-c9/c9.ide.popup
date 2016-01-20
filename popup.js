@@ -5,7 +5,7 @@
  * 
  **/
 define(function(require, exports, module) {
-    main.consumes = ["Plugin", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", "panels", "settings", "dialog.question", "ace"];
+    main.consumes = ["Plugin", "c9", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", "panels", "tree", "settings", "dialog.question", "ace"];
     main.provides = ["popup"];
 
     return main;
@@ -23,7 +23,8 @@ define(function(require, exports, module) {
         var settings = imports.settings;
         var layout = imports.layout;
         var panels = imports.panels;
-        
+        var c9 = imports.c9;
+        var console = imports.console;
 
         /***** Lets talk about this *****/
         /*
@@ -176,26 +177,31 @@ define(function(require, exports, module) {
             }
         });
         
+        
         if (isPopup()) {
-            layout.setBaseLayout("minimal");
-            panels.deactivate("tree");
-            tabManager.once("ready", function() {
-                window.c9popupReady();
-                tabManager.on("tabAfterClose", function(e) {
-                    if (tabManager.getPanes()[0].getTabs().length == 1 && tabManager.getPanes()[0].getTabs()[0].path == e.tab.path) {
-                        popupMainWindow.app.settings.set("state/" + window.name, {}, true); //clearState of popwindow
-                        popupMainWindow.app.settings.set("state/popup/@isOpen","false");
-                        popupMainWindow.app.settings.save(true);
-                        
-                        setTimeout(function(){
-                            window.location.href = "about:blank";
-                            window.close();
-                        },0);
-                    }
-                });
+            c9.once("ready",function(){
+                layout.setBaseLayout("minimal");
+                panels.deactivate("tree");
                 popupMainWindow.app.settings.set("state/popup/@isOpen","true"); //dont re open this popup window on reload
                 popupMainWindow.app.settings.save(true);
             });
+            tabManager.on("ready",function(){
+                tabManager.toggleButtons(0);
+                window.c9popupReady();
+            });
+            tabManager.on("tabAfterClose", function(e) {
+                if (tabManager.getPanes()[0].getTabs().length == 1 && tabManager.getPanes()[0].getTabs()[0].path == e.tab.path) {
+                    popupMainWindow.app.settings.set("state/" + window.name, {}, true); //clearState of popwindow
+                    popupMainWindow.app.settings.set("state/popup/@isOpen","false");
+                    popupMainWindow.app.settings.save(true);
+                    
+                    setTimeout(function(){
+                        window.location.href = "about:blank";
+                        window.close();
+                    },0);
+                }
+            });
+                
             window.addEventListener("beforeunload",function() {//popup window
                 if (!popupMainWindow.closing && tabManager.getPanes()[0].getTabs().length == 1) {
                     popupMainWindow.app.settings.set("state/popup/@isOpen","false"); //dont re open this popup window on reload
