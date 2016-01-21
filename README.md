@@ -1,7 +1,7 @@
 # c9.ide.popup
 
 
-http://www.screencast.com/t/xkHxhdSc
+http://www.screencast.com/t/8Id13fa5
 
 
 I have modified the core a bit, so use 
