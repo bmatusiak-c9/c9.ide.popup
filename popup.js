@@ -24,58 +24,43 @@ define(function(require, exports, module) {
         var layout = imports.layout;
         var panels = imports.panels;
         var c9 = imports.c9;
-        var console = imports.console;
-
+        var $console = imports.console;
+        
+        var popupBridge = require("./popup.bridge")
+        
         /***** Lets talk about this *****/
         /*
             HowTo: Open a tab then right click tab, then click "Popout tab"
-                    There is also a menu item for this also, "View/Popout Window"
-                On popup, You can right click tab, and Popin Tab
                 
             Todo: 
                     1. popup last position. 
-                    3. Drag tabs. <if there is a will there is a way>
                     
-                    4. Sync runners and debuggers. <try to sync any all events to main window, not just for runners and debuggers
-                            *make sure master has events storage*>
-                        **
-                    
-                    
-                    6. enable multi popups <some more trickery with settings plugin, and this still mabe limited to 2 or 3, for resource/proformance reasons>
-                            add this to prefrences panel
-                    7. Need to provice each popup with a window.name key, so a 2nd project dont take over a popup
-                    
-        Keep Terminal State when switching windows
-            ```c9.ide.terminal/terminal.js
-                doc.on("unload", function(){
-                    //if tab is detaching dont kill or distroy the process
-                    if(doc.tab.meta.$detach)
-                        return;
-            ```
         */
         
         
         /***** Initialization *****/
 
         var plugin = new Plugin("Ajax.org", main.consumes);
-        //var emit = plugin.getEmitter();
-
+        var emit = plugin.getEmitter();
+        
         plugin.on("load", function() {});
         plugin.on("unload", function() {});
 
         plugin.windows = {};
         
-    
+        
+        settings.on("onevent",function(e){
+            //settings.$getEmitter().apply(null,e);
+            popupBridge.emit("settings-onevent",e);
+        });
+        popupBridge.on("settings-onevent",function(e){
+            settings.$getEmitter().apply(null,e);
+        });
+        
+        
         var popupWindowNameKey = "c9popup-";
         var popupWindowID = "";
         var popupMainWindow = window.opener || window;
-        
-        if(window.opener && !window.opener.children){
-            window.opener.children = {};
-            window.opener.children[window.name] = window;
-        }else if(window.opener && window.opener.children){
-            window.opener.children[window.name] = window;
-        }
         
         function isPopup() {
             return (window.name.substr(0, popupWindowNameKey.length) == popupWindowNameKey);
@@ -177,8 +162,11 @@ define(function(require, exports, module) {
             }
         });
         
-        
+            
         if (isPopup()) {
+            //popupMainWindow.app.settings.on("onevent",function(e){
+                //settingsEmitter.apply(null,e);
+            //})
             c9.once("ready",function(){
                 layout.setBaseLayout("minimal");
                 panels.deactivate("tree");
@@ -188,6 +176,7 @@ define(function(require, exports, module) {
             tabManager.on("ready",function(){
                 tabManager.toggleButtons(0);
                 window.c9popupReady();
+                emit("ready");
             });
             tabManager.on("tabAfterClose", function(e) {
                 if (tabManager.getPanes()[0].getTabs().length == 1 && tabManager.getPanes()[0].getTabs()[0].path == e.tab.path) {
@@ -233,6 +222,7 @@ define(function(require, exports, module) {
                 return;
             }else
                 popupwin = window.open("", windowName, "height=800,width=600,titlebar=0,toolbar=0,location=0,status=0,menubar=0");
+             
             /* todo: remember pos of last time window was open, -set these values in settings on popup windows close */
 
             setTimeout(function() { //this timeout waits for the window to open to check and see if it was blocked by a popup.
@@ -282,6 +272,8 @@ define(function(require, exports, module) {
                         ready(popupwin);
                 };
                 plugin.windows[popupwin.name] = popupwin;
+                popupBridge.addWindow(popupwin);
+                //postMessage.addWindow(popupwin);
             }
         }
 
