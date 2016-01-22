@@ -5,7 +5,8 @@
  * 
  **/
 define(function(require, exports, module) {
-    main.consumes = ["Plugin", "c9", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", "panels", "tree", "settings", "dialog.question", "ace"];
+    main.consumes = ["Plugin", "c9", "commands", "tabManager", "tabbehavior", "menus", "ui", "layout", 
+                "panels", "tree", "settings", "dialog.question", "ace", "breakpoints","popup.windows"];
     main.provides = ["popup"];
 
     return main;
@@ -26,17 +27,7 @@ define(function(require, exports, module) {
         var c9 = imports.c9;
         var $console = imports.console;
         
-        var popupBridge = require("./popup.bridge")
-        
-        /***** Lets talk about this *****/
-        /*
-            HowTo: Open a tab then right click tab, then click "Popout tab"
-                
-            Todo: 
-                    1. popup last position. 
-                    
-        */
-        
+        var windows = imports["popup.windows"];
         
         /***** Initialization *****/
 
@@ -51,15 +42,15 @@ define(function(require, exports, module) {
         
         settings.on("onevent",function(e){
             //settings.$getEmitter().apply(null,e);
-            popupBridge.emit("settings-onevent",e);
+            windows.emit("settings-onevent",e);
         });
-        popupBridge.on("settings-onevent",function(e){
+        windows.on("settings-onevent",function(e){
             settings.$getEmitter().apply(null,e);
         });
         
         
         var popupWindowNameKey = "c9popup-";
-        var popupWindowID = "";
+        var popupWindows;
         var popupMainWindow = window.opener || window;
         
         function isPopup() {
@@ -106,16 +97,26 @@ define(function(require, exports, module) {
 
         settings.on("read", function() {
             settings.setDefaults("state/popup", [
-                ["isOpen", "false"],
-                ["windowId",makeid()]
+                ["active", "true"],
+                ["windows", "[]"]
             ]);
             
-            popupWindowID = settings.get("state/popup/@windowId");
+            var popupWindows = settings.getJson("state/popup/@windows");
             
-            var popupAlreadyOpen = settings.get("state/popup/@isOpen");
-            if (popupAlreadyOpen == "true") openWindow(null, 1000);
-
+            popupWindows.forEach(function(v,i){
+                openWindow(null, 1000,v.name);
+            });
+            
         }, plugin);
+    
+        settings.on("write", function (e) {
+            var popupWindows = [];
+            for(var i in plugin.windows){
+                popupWindows.push({name:plugin.windows[i].name});
+            }
+            settings.setJson("state/popup/@windows", popupWindows);
+            
+        });
 
         function popuptab(tab) {
             function tabOpened(err, $tab) {
@@ -129,7 +130,9 @@ define(function(require, exports, module) {
                 var tabState = tab.getState();
                 tabState.windowName = window.name;
                 tabOpened();
-                popupMainWindow.app.tabManager.open(tabState);
+                setTimeout(function(){
+                    popupMainWindow.app.tabManager.open(tabState);
+                },100);
             }
             else
                 openWindow(function(popupwin) {
@@ -141,7 +144,7 @@ define(function(require, exports, module) {
                     }
                 });
         }
-        
+        /*
         tabManager.on("open", function(e) {
             for(var i in plugin.windows){
                 var $window = plugin.windows[i];
@@ -160,9 +163,8 @@ define(function(require, exports, module) {
                     }
                 }
             }
-        });
+        });*/
         
-            
         if (isPopup()) {
             //popupMainWindow.app.settings.on("onevent",function(e){
                 //settingsEmitter.apply(null,e);
@@ -178,6 +180,10 @@ define(function(require, exports, module) {
                 window.c9popupReady();
                 emit("ready");
             });
+            menus.on("restore",function(){
+                popuptab(tabManager.getPanes()[0].getTabs()[0]);
+                menus.minimize();
+            });
             tabManager.on("tabAfterClose", function(e) {
                 if (tabManager.getPanes()[0].getTabs().length == 1 && tabManager.getPanes()[0].getTabs()[0].path == e.tab.path) {
                     popupMainWindow.app.settings.set("state/" + window.name, {}, true); //clearState of popwindow
@@ -192,14 +198,12 @@ define(function(require, exports, module) {
             });
                 
             window.addEventListener("beforeunload",function() {//popup window
+                window.closing = true;
                 if (!popupMainWindow.closing && tabManager.getPanes()[0].getTabs().length == 1) {
                     popupMainWindow.app.settings.set("state/popup/@isOpen","false"); //dont re open this popup window on reload
                     popupMainWindow.app.settings.set("state/"+window.name,{},true); //clearState of popwindow
                 }
                 popupMainWindow.app.settings.save(true);
-                setTimeout(function(){
-                    window.location.href = "about:blank";
-                },0);
             });
             
         }else{
@@ -210,8 +214,8 @@ define(function(require, exports, module) {
             });
         }
         
-        function openWindow(ready, popupBlockerCheckdelay) {
-            var windowName = popupWindowID;
+        function openWindow(ready, popupBlockerCheckdelay,windowName) {
+            windowName = windowName || makeid();
             var popupwin;
             
             if(plugin.windows[windowName] && !plugin.windows[windowName].closed){
@@ -272,7 +276,7 @@ define(function(require, exports, module) {
                         ready(popupwin);
                 };
                 plugin.windows[popupwin.name] = popupwin;
-                popupBridge.addWindow(popupwin);
+                windows.addWindow(popupwin);
                 //postMessage.addWindow(popupwin);
             }
         }

@@ -1,7 +1,9 @@
 # c9.ide.popup
 
 
-http://www.screencast.com/t/8Id13fa5
+[http://www.screencast.com/t/8Id13fa5](http://www.screencast.com/t/8Id13fa5)
+
+[http://www.screencast.com/t/pyq0U7cKvY](http://www.screencast.com/t/pyq0U7cKvY)
 
 
 I have modified the core a bit, so use 
