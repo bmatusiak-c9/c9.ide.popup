@@ -40,10 +40,11 @@ define(function(require, exports, module) {
                 }
         }
 
-        function addWindow(window) {
+        function addWindow(window,beforeunload) {
             windows.push(window);
             window.addEventListener("beforeunload", function() {
                 delWindow(window);
+                if(beforeunload) beforeunload();
             });
         }
 

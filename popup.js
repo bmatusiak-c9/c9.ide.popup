@@ -276,7 +276,9 @@ define(function(require, exports, module) {
                         ready(popupwin);
                 };
                 plugin.windows[popupwin.name] = popupwin;
-                windows.addWindow(popupwin);
+                windows.addWindow(popupwin,function(){
+                    delete plugin.windows[popupwin.name];
+                });
                 //postMessage.addWindow(popupwin);
             }
         }
