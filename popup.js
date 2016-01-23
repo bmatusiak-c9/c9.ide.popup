@@ -161,6 +161,10 @@ define(function(require, exports, module) {
         }
 
         plugin.freezePublicAPI({
+            /**
+            * popuptab(tab)
+            * tab = tab<object>
+            */
             popuptab: popuptab
         });
 

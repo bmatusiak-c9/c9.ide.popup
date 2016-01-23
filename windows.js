@@ -88,7 +88,7 @@ define(function(require, exports, module) {
 
             var windowOptions = [
                 ["height", meta.screen ? meta.screen.height : "600"],
-                ["width", meta.screen ? meta.screen.width : "800"],
+                ["width", meta.screen ? meta.screen.width : "575"],
                 ["titlebar", "0"],
                 ["toolbar", "0"],
                 ["location", "0"],
@@ -197,42 +197,42 @@ define(function(require, exports, module) {
          **/
         plugin.freezePublicAPI({
             /**
-             * 
+             * Opens a windows, mainly for popup plugin useage,  see opentab in popup.js
              */
             openWindow: openWindow,
             
             /**
-             * 
+             * A cloned list of open children/windows
              */
             get windows() {
                 return windows.slice(0);
             },
             
             /**
-             * 
+             * if parent if "undefined" then its a child
              */
             get parent() {
                 return window.opener;
             },
             
             /**
-             * 
+             * Used for saving open windows with some data when closing/opening main window
              */
             get metadata() {
                 return getWindowMetadata();
             },
             
             /**
-             * 
+             * checks to see if the current loaded window is a popup
              */
             get isPopup() {
                 return isPopup();
             },
             
             /**
-             * 
+             * Loops windows list and provides window object via a function
              */
-            loopWindows: function(fn) {
+            loopWindows: function(fn) {// if the fn returns true; loop is stopped
                 for (var j = 0; j < windows.length; j++) {
                     if (windows[j].app && !windows[j].closing)
                         if (fn(windows[j])) break;
@@ -240,7 +240,9 @@ define(function(require, exports, module) {
             },
             
             /**
-             * 
+             *  Send to all children, or send to main/parent
+             *  
+             *  Do children need to talk to eachother? In some ways, it can be looped back to other siblings
              */
             emit: function() {
                 var args = [];
@@ -251,7 +253,7 @@ define(function(require, exports, module) {
             },
             
             /**
-             * 
+             * If this is a child window, send/broadcast postMessage to all siblings and master
              */
             broadcast: function() {//does not work yet
                 var args = [];
