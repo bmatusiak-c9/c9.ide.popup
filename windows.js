@@ -106,9 +106,7 @@ define(function(require, exports, module) {
                 windowOptions.forEach(function(v, i) {
                     str.push(v.join("="));
                 });
-                str = str.join(",");
-                console.log("str", str);
-                return str;
+                return str.join(",");
             })(windowOptions));
             
             $window.$meta = meta;
