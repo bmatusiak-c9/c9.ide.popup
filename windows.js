@@ -5,24 +5,29 @@
  * 
  **/
 define(function(require, exports, module) {
-    main.consumes = ["Plugin", "dialog.question"];
+    //main.consumes = ["Plugin", "dialog.question"];
+    main.consumes = [];
     main.provides = ["popup.windows"];
-
+    
+    var EventEmitter = require("events").EventEmitter;
+        
     return main;
 
     function main(options, imports, register) {
-        var Plugin = imports.Plugin;
-        var question = imports["dialog.question"].show;
+        //var Plugin = imports.Plugin;
+        //var question = imports["dialog.question"].show;
 
         /***** Initialization *****/
 
-        var plugin = new Plugin("Ajax.org", main.consumes);
+        //var plugin = new Plugin("Ajax.org", main.consumes);
 
-        plugin.on("load", function() {});
-        plugin.on("unload", function() {});
+        //plugin.on("load", function() {});
+        //plugin.on("unload", function() {});
 
-        var emit = plugin.getEmitter();
-
+        
+        var events = new EventEmitter();        
+        var emit = events.emit.bind(events);
+        
         var windowNameKey = "c9popup-";
         var windows = [];
 
@@ -138,17 +143,21 @@ define(function(require, exports, module) {
             }, meta.delay || 100);
 
             function popupBlocked() {
-                question(
-                    "Popup not visable!",
-                    "Please add this site to your exception list if popup was block. Or the popup window may not have a good width.",
-                    "Open Popup window?",
-                    function(all) { // Yes
-                        openWindow(meta); //retry everything
-                    },
-                    function(all) { // No
-                        //do nothing as this just closes the dialog
-                    }
-                );
+                if(confirm("Please add this site to your exception list if popup was block. Then click ok.")){
+                    openWindow(meta);
+                }
+                
+                // question(
+                //     "Popup not visable!",
+                //     "Please add this site to your exception list if popup was block. Or the popup window may not have a good width.",
+                //     "Open Popup window?",
+                //     function(all) { // Yes
+                //         openWindow(meta); //retry everything
+                //     },
+                //     function(all) { // No
+                //         //do nothing as this just closes the dialog
+                //     }
+                // );
             }
 
             function init() {
@@ -193,7 +202,8 @@ define(function(require, exports, module) {
         /**
          * 
          **/
-        plugin.freezePublicAPI({
+        //plugin.freezePublicAPI(
+        var $plugin = {
             /**
              * Opens a windows, mainly for popup plugin useage,  see opentab in popup.js
              */
@@ -204,6 +214,10 @@ define(function(require, exports, module) {
              */
             get windows() {
                 return windows.slice(0);
+            },
+            
+            get window() {
+                return window;
             },
             
             /**
@@ -260,10 +274,13 @@ define(function(require, exports, module) {
                 }
                 postMessage(args, true);
             },
-        });
+            
+            on: events.on.bind(events)
+        };
+        //);
 
         register(null, {
-            "popup.windows": plugin
+            "popup.windows": $plugin
         });
     }
 });
